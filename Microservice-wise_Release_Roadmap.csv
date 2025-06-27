@@ -1,0 +1,12 @@
+Microservice,Release Sprint
+hl7-parser-service,Sprint 1
+patient-service,Sprint 1
+observation-service,Sprint 2
+user-auth-service,Sprint 2
+role-management-service,Sprint 2
+appointment-service,Sprint 3
+telemedicine-service,Sprint 3
+notification-service,Sprint 4
+analytics-service,Sprint 4
+audit-logging-service,Sprint 5
+fhir-api-gateway,Sprint 5

@@ -1,0 +1,29 @@
+User Story,Sprint
+"Map HL7 v2 segments (PID, OBX) to FHIR resources",Sprint 0
+Create Git repos and pipeline scaffolds,Sprint 0
+Persist HL7 and transformed FHIR with audit lineage,Sprint 0
+Ingest HL7 messages via MLLP and HTTP,Sprint 1
+Parse HL7 to FHIR and push to patient-service,Sprint 1
+"Patient registration, search, merge, $everything",Sprint 1
+Enforce idempotency via Message Control ID,Sprint 1
+Stream HL7 ORU^R01 lab data,Sprint 2
+Map custom codes to LOINC,Sprint 2
+Correlate Observations over time,Sprint 2
+"User login with JWT, MFA, SSO",Sprint 2
+Field masking by role,Sprint 2
+Book/reschedule appointments with conflict rules,Sprint 3
+Join call via email/QR/app,Sprint 3
+Store session metadata and consent timestamp,Sprint 3
+Notify doctor if patient misses session,Sprint 3
+Retry failed SMS/email alerts with backoff,Sprint 4
+Patient preferences for communication,Sprint 4
+Train ML model on Observations for diabetes risk,Sprint 4
+Show predictive risk scores in dashboard,Sprint 4
+"Log all PHI access with user, IP, reason",Sprint 5
+Redact logs older than 90 days,Sprint 5
+Throttle and route based on FHIR resource,Sprint 5
+Export signed logs with checksums,Sprint 5
+Run system-level tests across microservices,Sprint 6
+Deploy to Azure/AWS with rollback plan,Sprint 6
+Validate HIPAA controls and generate audit reports,Sprint 6
+Live demo and retrospective,Sprint 6
