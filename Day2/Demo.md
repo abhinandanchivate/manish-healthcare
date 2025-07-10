@@ -51,7 +51,8 @@ All HL7 v2.x messages are made of **segments**, each segment starts with a **3-l
 | `^`        | Component separator     |                 |
 | `~`        | Repetition separator    |                 |
 | `\`        | Escape character        |                 |
-| `&`        | Sub-component separator |                 |
+| `&`        | Sub-component separator |    
+|  `| `      | Field separator         |                 |
 
 Default: `MSH|^~\&`
 
