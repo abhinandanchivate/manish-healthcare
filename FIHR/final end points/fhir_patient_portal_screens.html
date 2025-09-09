@@ -1,0 +1,1327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FHIR Patient Portal</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8fafc;
+            color: #334155;
+        }
+
+        .screen {
+            display: none;
+            min-height: 100vh;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+            color: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        .nav-link {
+            color: white;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            transition: background 0.2s;
+        }
+
+        .nav-link:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #374151;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+        }
+
+        .btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn:hover {
+            background: #2563eb;
+        }
+
+        .btn-secondary {
+            background: #6b7280;
+        }
+
+        .btn-secondary:hover {
+            background: #4b5563;
+        }
+
+        .grid {
+            display: grid;
+            gap: 2rem;
+        }
+
+        .grid-2 {
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        }
+
+        .grid-3 {
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #3b82f6;
+        }
+
+        .stat-label {
+            color: #6b7280;
+            margin-top: 0.5rem;
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+        }
+
+        .alert-info {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #93c5fd;
+        }
+
+        .alert-warning {
+            background: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fcd34d;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .table th,
+        .table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .table th {
+            background: #f9fafb;
+            font-weight: 600;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 90%;
+        }
+
+        .video-container {
+            background: #000;
+            border-radius: 8px;
+            aspect-ratio: 16/9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.1rem;
+        }
+
+        .sidebar {
+            background: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            height: fit-content;
+        }
+
+        .notification {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            background: white;
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .notification.unread {
+            border-left: 4px solid #3b82f6;
+        }
+
+        .screen-nav {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: white;
+            border-radius: 8px;
+            padding: 1rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 100;
+        }
+
+        .screen-nav select {
+            padding: 0.5rem;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            margin-right: 0.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .grid-2,
+            .grid-3 {
+                grid-template-columns: 1fr;
+            }
+
+            .nav-links {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Screen Navigation -->
+    <div class="screen-nav">
+        <select id="screenSelector" onchange="showScreen(this.value)">
+            <option value="login">Login</option>
+            <option value="dashboard">Dashboard</option>
+            <option value="patient-registration">Patient Registration</option>
+            <option value="patient-search">Patient Search</option>
+            <option value="patient-profile">Patient Profile</option>
+            <option value="appointment-booking">Appointment Booking</option>
+            <option value="vital-signs">Vital Signs Entry</option>
+            <option value="lab-results">Lab Results</option>
+            <option value="telemedicine">Telemedicine</option>
+            <option value="notifications">Notifications</option>
+        </select>
+        <button class="btn" onclick="showScreen(document.getElementById('screenSelector').value)">Go</button>
+    </div>
+
+    <!-- Login Screen -->
+    <div id="login" class="screen active">
+        <div class="container">
+            <div style="max-width: 400px; margin: 0 auto; padding-top: 5rem;">
+                <div class="card">
+                    <div style="text-align: center; margin-bottom: 2rem;">
+                        <h1 class="logo">FHIR Patient Portal</h1>
+                        <p style="color: #6b7280; margin-top: 0.5rem;">Secure healthcare access</p>
+                    </div>
+                    
+                    <form>
+                        <div class="form-group">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-input" placeholder="john.doe@example.com">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Password</label>
+                            <input type="password" class="form-input" placeholder="Enter your password">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">MFA Code</label>
+                            <input type="text" class="form-input" placeholder="123456">
+                        </div>
+                        
+                        <button type="submit" class="btn" style="width: 100%; margin-bottom: 1rem;">Sign In</button>
+                        
+                        <div style="text-align: center;">
+                            <a href="#" style="color: #3b82f6; text-decoration: none;">Forgot Password?</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard Screen -->
+    <div id="dashboard" class="screen">
+        <div class="header">
+            <div class="nav">
+                <div class="logo">FHIR Patient Portal</div>
+                <div class="nav-links">
+                    <a href="#" class="nav-link">Dashboard</a>
+                    <a href="#" class="nav-link">Appointments</a>
+                    <a href="#" class="nav-link">Records</a>
+                    <a href="#" class="nav-link">Messages</a>
+                    <a href="#" class="nav-link">Profile</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="container">
+            <h1 style="margin-bottom: 2rem;">Welcome back, John Doe</h1>
+            
+            <div class="alert alert-info">
+                <strong>Upcoming Appointment:</strong> Dr. Jane Smith - September 15, 2023 at 9:00 AM
+            </div>
+            
+            <div class="grid grid-3">
+                <div class="stat-card">
+                    <div class="stat-number">3</div>
+                    <div class="stat-label">Upcoming Appointments</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">12</div>
+                    <div class="stat-label">Lab Results</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">5</div>
+                    <div class="stat-label">Unread Messages</div>
+                </div>
+            </div>
+            
+            <div class="grid grid-2">
+                <div class="card">
+                    <h2 style="margin-bottom: 1rem;">Recent Vitals</h2>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Metric</th>
+                                <th>Value</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Blood Pressure</td>
+                                <td>120/80 mmHg</td>
+                                <td>Sep 1, 2023</td>
+                            </tr>
+                            <tr>
+                                <td>Heart Rate</td>
+                                <td>72 bpm</td>
+                                <td>Sep 1, 2023</td>
+                            </tr>
+                            <tr>
+                                <td>Weight</td>
+                                <td>175 lbs</td>
+                                <td>Aug 28, 2023</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="card">
+                    <h2 style="margin-bottom: 1rem;">Quick Actions</h2>
+                    <div style="display: flex; flex-direction: column; gap: 1rem;">
+                        <button class="btn">Book Appointment</button>
+                        <button class="btn btn-secondary">Request Prescription Refill</button>
+                        <button class="btn btn-secondary">View Lab Results</button>
+                        <button class="btn btn-secondary">Message Provider</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Patient Registration Screen -->
+    <div id="patient-registration" class="screen">
+        <div class="header">
+            <div class="nav">
+                <div class="logo">FHIR Patient Portal</div>
+                <div class="nav-links">
+                    <a href="#" class="nav-link">Dashboard</a>
+                    <a href="#" class="nav-link">Patients</a>
+                    <a href="#" class="nav-link">Appointments</a>
+                    <a href="#" class="nav-link">Records</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="container">
+            <h1 style="margin-bottom: 2rem;">Patient Registration</h1>
+            
+            <div class="card">
+                <form>
+                    <div class="grid grid-2">
+                        <div class="form-group">
+                            <label class="form-label">First Name *</label>
+                            <input type="text" class="form-input" placeholder="John" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Last Name *</label>
+                            <input type="text" class="form-input" placeholder="Doe" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Date of Birth *</label>
+                            <input type="date" class="form-input" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Gender *</label>
+                            <select class="form-input" required>
+                                <option value="">Select Gender</option>
+                                <option value="male">Male</option>
+                                <option value="female">Female</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Medical Record Number</label>
+                            <input type="text" class="form-input" placeholder="MRN12345">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Social Security Number</label>
+                            <input type="text" class="form-input" placeholder="XXX-XX-XXXX">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Phone Number</label>
+                            <input type="tel" class="form-input" placeholder="555-123-4567">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-input" placeholder="john.doe@email.com">
+                        </div>
+                    </div>
+                    
+                    <h3 style="margin: 2rem 0 1rem 0;">Address Information</h3>
+                    
+                    <div class="grid grid-2">
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label class="form-label">Street Address</label>
+                            <input type="text" class="form-input" placeholder="123 Main St">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">City</label>
+                            <input type="text" class="form-input" placeholder="Springfield">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">State</label>
+                            <input type="text" class="form-input" placeholder="IL">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Postal Code</label>
+                            <input type="text" class="form-input" placeholder="62701">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Country</label>
+                            <input type="text" class="form-input" placeholder="US">
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                        <button type="submit" class="btn">Register Patient</button>
+                        <button type="button" class="btn btn-secondary">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Patient Search Screen -->
+    <div id="patient-search" class="screen">
+        <div class="header">
+            <div class="nav">
+                <div class="logo">FHIR Patient Portal</div>
+                <div class="nav-links">
+                    <a href="#" class="nav-link">Dashboard</a>
+                    <a href="#" class="nav-link">Patients</a>
+                    <a href="#" class="nav-link">Appointments</a>
+                    <a href="#" class="nav-link">Records</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="container">
+            <h1 style="margin-bottom: 2rem;">Patient Search</h1>
+            
+            <div class="card">
+                <div class="grid grid-3">
+                    <div class="form-group">
+                        <label class="form-label">Patient ID</label>
+                        <input type="text" class="form-input" placeholder="MRN12345">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">First Name</label>
+                        <input type="text" class="form-input" placeholder="John">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Last Name</label>
+                        <input type="text" class="form-input" placeholder="Doe">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Date of Birth</label>
+                        <input type="date" class="form-input">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Phone</label>
+                        <input type="tel" class="form-input" placeholder="555-123-4567">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-input" placeholder="john.doe@email.com">
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                    <button class="btn">Search</button>
+                    <button class="btn btn-secondary">Clear</button>
+                    <label style="margin-left: auto; display: flex; align-items: center; gap: 0.5rem;">
+                        <input type="checkbox"> Fuzzy Search
+                    </label>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2 style="margin-bottom: 1rem;">Search Results (1 patient found)</h2>
+                
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Patient ID</th>
+                            <th>Name</th>
+                            <th>Date of Birth</th>
+                            <th>Phone</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>MRN12345</td>
+                            <td>John Michael Doe</td>
+                            <td>January 15, 1980</td>
+                            <td>555-123-4567</td>
+                            <td>
+                                <button class="btn" style="padding: 0.25rem 0.75rem; font-size: 0.875rem;">View Profile</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Patient Profile Screen -->
+    <div id="patient-profile" class="screen">
+        <div class="header">
+            <div class="nav">
+                <div class="logo">FHIR Patient Portal</div>
+                <div class="nav-links">
+                    <a href="#" class="nav-link">Dashboard</a>
+                    <a href="#" class="nav-link">Patients</a>
+                    <a href="#" class="nav-link">Appointments</a>
+                    <a href="#" class="nav-link">Records</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="container">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                <h1>Patient Profile - John Michael Doe</h1>
+                <div style="display: flex; gap: 1rem;">
+                    <button class="btn btn-secondary">Edit Profile</button>
+                    <button class="btn">Export Data</button>
+                </div>
+            </div>
+            
+            <div class="grid grid-2">
+                <div class="card">
+                    <h2 style="margin-bottom: 1rem;">Demographics</h2>
+                    <div style="display: grid; gap: 1rem;">
+                        <div><strong>Patient ID:</strong> MRN12345</div>
+                        <div><strong>Name:</strong> John Michael Doe</div>
+                        <div><strong>Date of Birth:</strong> January 15, 1980 (43 years old)</div>
+                        <div><strong>Gender:</strong> Male</div>
+                        <div><strong>Phone:</strong> 555-123-4567</div>
+                        <div><strong>Email:</strong> john.doe@email.com</div>
+                        <div><strong>Address:</strong> 123 Main St, Springfield, IL 62701, US</div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h2 style="margin-bottom: 1rem;">Insurance Information</h2>
+                    <div style="display: grid; gap: 1rem;">
+                        <div><strong>Primary Insurance:</strong> Blue Cross Blue Shield</div>
+                        <div><strong>Policy Number:</strong> 12345-67890</div>
+                        <div><strong>Group Number:</strong> GRP-001</div>
+                        <div><strong>Effective Date:</strong> January 1, 2023</div>
+                        <div><strong>Copay:</strong> $25</div>
+                        <div><strong>Deductible:</strong> $1,000</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2 style="margin-bottom: 1rem;">Recent Activity</h2>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Provider</th>
+                            <th>Description</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Sep 1, 2023</td>
+                            <td>Appointment</td>
+                            <td>Dr. Jane Smith</td>
+                            <td>Annual Physical</td>
+                            <td>Completed</td>
+                        </tr>
+                        <tr>
+                            <td>Aug 28, 2023</td>
+                            <td>Lab Work</td>
+                            <td>LabCorp</td>
+                            <td>Blood Panel</td>
+                            <td>Results Available</td>
+                        </tr>
+                        <tr>
+                            <td>Aug 15, 2023</td>
+                            <td>Prescription</td>
+                            <td>Dr. Jane Smith</td>
+                            <td>Lisinopril 10mg</td>
+                            <td>Active</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Appointment Booking Screen -->
+    <div id="appointment-booking" class="screen">
+        <div class="header">
+            <div class="nav">
+                <div class="logo">FHIR Patient Portal</div>
+                <div class="nav-links">
+                    <a href="#" class="nav-link">Dashboard</a>
+                    <a href="#" class="nav-link">Appointments</a>
+                    <a href="#" class="nav-link">Records</a>
+                    <a href="#" class="nav-link">Messages</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="container">
+            <h1 style="margin-bottom: 2rem;">Book New Appointment</h1>
+            
+            <div class="grid grid-2" style="align-items: start;">
+                <div class="card">
+                    <h2 style="margin-bottom: 1rem;">Appointment Details</h2>
+                    
+                    <form>
+                        <div class="form-group">
+                            <label class="form-label">Provider</label>
+                            <select class="form-input">
+                                <option value="">Select Provider</option>
+                                <option value="doc-uuid-456">Dr. Jane Smith - Cardiology</option>
+                                <option value="doc-uuid-789">Dr. Bob Johnson - Internal Medicine</option>
+                                <option value="doc-uuid-012">Dr. Sarah Wilson - Dermatology</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Appointment Type</label>
+                            <select class="form-input">
+                                <option value="">Select Type</option>
+                                <option value="routine">Routine Visit</option>
+                                <option value="follow-up">Follow-up</option>
+                                <option value="urgent">Urgent Care</option>
+                                <option value="telehealth">Telehealth</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Preferred Date</label>
+                            <input type="date" class="form-input">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Preferred Time</label>
+                            <select class="form-input">
+                                <option value="">Select Time</option>
+                                <option value="morning">Morning (8:00 AM - 12:00 PM)</option>
+                                <option value="afternoon">Afternoon (12:00 PM - 5:00 PM)</option>
+                                <option value="evening">Evening (5:00 PM - 8:00 PM)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Reason for Visit</label>
+                            <textarea class="form-input" rows="3" placeholder="Describe the reason for your appointment..."></textarea>
+                        </div>
+                        
+                        <div style="display: flex; gap: 1rem;">
+                            <button type="submit" class="btn">Check Availability</button>
+                            <button type="button" class="btn btn-secondary">Add to Waitlist</button>
+                        </div>
+                    </form>
+                </div>
+                
+                <div class="card">
+                    <h2 style="margin-bottom: 1rem;">Available Time Slots</h2>
+                    <p style="color: #6b7280; margin-bottom: 1rem;">September 15, 2023 - Dr. Jane Smith</p>
+                    
+                    <div style="display: grid; gap: 0.5rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 6px;">
+                            <span>9:00 AM - 9:30 AM</span>
+                            <button class="btn" style="padding: 0.25rem 0.75rem; font-size: 0.875rem;">Book</button>
+                        </div>
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 6px;">
+                            <span>10:00 AM - 10:30 AM</span>
+                            <button class="btn" style="padding: 0.25rem 0.75rem; font-size: 0.875rem;">Book</button>
+                        </div>
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; background: #f9fafb; color: #6b7280;">
+                            <span>11:00 AM - 11:30 AM</span>
+                            <span style="font-size: 0.875rem;">Booked</span>
+                        </div>
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 6px;">
+                            <span>2:00 PM - 2:30 PM</span>
+                            <button class="btn" style="padding: 0.25rem 0.75rem; font-size: 0.875rem;">Book</button>
+                        </div>
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 6px;">
+                            <span>3:30 PM - 4:00 PM</span>
+                            <button class="btn" style="padding: 0.25rem 0.75rem; font-size: 0.875rem;">Book</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vital Signs Entry Screen -->
+    <div id="vital-signs" class="screen">
+        <div class="header">
+            <div class="nav">
+                <div class="logo">FHIR Patient Portal</div>
+                <div class="nav-links">
+                    <a href="#" class="nav-link">Dashboard</a>
+                    <a href="#" class="nav-link">Records</a>
+                    <a href="#" class="nav-link">Vitals</a>
+                    <a href="#" class="nav-link">Reports</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="container">
+            <h1 style="margin-bottom: 2rem;">Vital Signs Entry</h1>
+            
+            <div class="grid grid-2" style="align-items: start;">
+                <div class="card">
+                    <h2 style="margin-bottom: 1rem;">Record New Vitals</h2>
+                    
+                    <form>
+                        <div class="form-group">
+                            <label class="form-label">Patient</label>
+                            <select class="form-input">
+                                <option value="patient-uuid-123">John Doe (MRN12345)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Date & Time</label>
+                            <input type="datetime-local" class="form-input" value="2023-09-01T12:30">
+                        </div>
+                        
+                        <h3 style="margin: 1.5rem 0 1rem 0;">Blood Pressure</h3>
+                        <div class="grid grid-2">
+                            <div class="form-group">
+                                <label class="form-label">Systolic (mmHg)</label>
+                                <input type="number" class="form-input" placeholder="120">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Diastolic (mmHg)</label>
+                                <input type="number" class="form-input" placeholder="80">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Heart Rate (bpm)</label>
+                            <input type="number" class="form-input" placeholder="72">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Temperature (°F)</label>
+                            <input type="number" step="0.1" class="form-input" placeholder="98.6">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Respiratory Rate (breaths/min)</label>
+                            <input type="number" class="form-input" placeholder="16">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Oxygen Saturation (%)</label>
+                            <input type="number" class="form-input" placeholder="98">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Weight (lbs)</label>
+                            <input type="number" step="0.1" class="form-input" placeholder="175.0">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Height (inches)</label>
+                            <input type="number" step="0.1" class="form-input" placeholder="70.0">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Notes</label>
+                            <textarea class="form-input" rows="3" placeholder="Additional observations..."></textarea>
+                        </div>
+                        
+                        <div style="display: flex; gap: 1rem;">
+                            <button type="submit" class="btn">Save Vitals</button>
+                            <button type="button" class="btn btn-secondary">Clear Form</button>
+                        </div>
+                    </form>
+                </div>
+                
+                <div class="card">
+                    <h2 style="margin-bottom: 1rem;">Recent Vital Signs</h2>
+                    
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>BP</th>
+                                <th>HR</th>
+                                <th>Temp</th>
+                                <th>Weight</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Sep 1</td>
+                                <td>120/80</td>
+                                <td>72</td>
+                                <td>98.6°F</td>
+                                <td>175 lbs</td>
+                            </tr>
+                            <tr>
+                                <td>Aug 28</td>
+                                <td>118/78</td>
+                                <td>68</td>
+                                <td>98.4°F</td>
+                                <td>176 lbs</td>
+                            </tr>
+                            <tr>
+                                <td>Aug 15</td>
+                                <td>122/82</td>
+                                <td>75</td>
+                                <td>98.7°F</td>
+                                <td>174 lbs</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <div class="alert alert-warning" style="margin-top: 1rem;">
+                        <strong>Alert:</strong> Blood pressure trend shows slight increase. Consider dietary modifications.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lab Results Screen -->
+    <div id="lab-results" class="screen">
+        <div class="header">
+            <div class="nav">
+                <div class="logo">FHIR Patient Portal</div>
+                <div class="nav-links">
+                    <a href="#" class="nav-link">Dashboard</a>
+                    <a href="#" class="nav-link">Records</a>
+                    <a href="#" class="nav-link">Lab Results</a>
+                    <a href="#" class="nav-link">Reports</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="container">
+            <h1 style="margin-bottom: 2rem;">Laboratory Results</h1>
+            
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <h2>Recent Lab Work</h2>
+                    <button class="btn">View Trends</button>
+                </div>
+                
+                <div style="margin-bottom: 1rem;">
+                    <strong>Test Date:</strong> August 28, 2023 | 
+                    <strong>Ordered by:</strong> Dr. Jane Smith | 
+                    <strong>Lab:</strong> LabCorp
+                </div>
+                
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Test</th>
+                            <th>Result</th>
+                            <th>Reference Range</th>
+                            <th>Units</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Glucose</td>
+                            <td>95</td>
+                            <td>70-100</td>
+                            <td>mg/dL</td>
+                            <td style="color: #059669;">Normal</td>
+                        </tr>
+                        <tr>
+                            <td>Cholesterol, Total</td>
+                            <td>185</td>
+                            <td>&lt;200</td>
+                            <td>mg/dL</td>
+                            <td style="color: #059669;">Normal</td>
+                        </tr>
+                        <tr>
+                            <td>HDL Cholesterol</td>
+                            <td>55</td>
+                            <td>&gt;40</td>
+                            <td>mg/dL</td>
+                            <td style="color: #059669;">Normal</td>
+                        </tr>
+                        <tr>
+                            <td>LDL Cholesterol</td>
+                            <td>110</td>
+                            <td>&lt;100</td>
+                            <td>mg/dL</td>
+                            <td style="color: #dc2626;">High</td>
+                        </tr>
+                        <tr>
+                            <td>Triglycerides</td>
+                            <td>150</td>
+                            <td>&lt;150</td>
+                            <td>mg/dL</td>
+                            <td style="color: #d97706;">Borderline</td>
+                        </tr>
+                        <tr>
+                            <td>Hemoglobin A1C</td>
+                            <td>5.8</td>
+                            <td>&lt;5.7</td>
+                            <td>%</td>
+                            <td style="color: #d97706;">Pre-diabetic</td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <div class="alert alert-warning" style="margin-top: 1rem;">
+                    <strong>Provider Note:</strong> LDL cholesterol is slightly elevated. Consider dietary changes and follow-up in 3 months. Schedule appointment to discuss pre-diabetic indicators.
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2 style="margin-bottom: 1rem;">Previous Lab Results</h2>
+                
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Test Panel</th>
+                            <th>Provider</th>
+                            <th>Key Findings</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Aug 28, 2023</td>
+                            <td>Comprehensive Metabolic Panel</td>
+                            <td>Dr. Jane Smith</td>
+                            <td>Elevated LDL, Pre-diabetic A1C</td>
+                            <td><button class="btn" style="padding: 0.25rem 0.75rem; font-size: 0.875rem;">View Details</button></td>
+                        </tr>
+                        <tr>
+                            <td>Feb 15, 2023</td>
+                            <td>Lipid Panel</td>
+                            <td>Dr. Jane Smith</td>
+                            <td>All values normal</td>
+                            <td><button class="btn" style="padding: 0.25rem 0.75rem; font-size: 0.875rem;">View Details</button></td>
+                        </tr>
+                        <tr>
+                            <td>Aug 22, 2022</td>
+                            <td>Annual Physical Panel</td>
+                            <td>Dr. Bob Johnson</td>
+                            <td>All values normal</td>
+                            <td><button class="btn" style="padding: 0.25rem 0.75rem; font-size: 0.875rem;">View Details</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Telemedicine Screen -->
+    <div id="telemedicine" class="screen">
+        <div class="header">
+            <div class="nav">
+                <div class="logo">FHIR Patient Portal</div>
+                <div class="nav-links">
+                    <a href="#" class="nav-link">Dashboard</a>
+                    <a href="#" class="nav-link">Appointments</a>
+                    <a href="#" class="nav-link">Telemedicine</a>
+                    <a href="#" class="nav-link">Messages</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="container">
+            <h1 style="margin-bottom: 2rem;">Telemedicine Session</h1>
+            
+            <div class="grid grid-3" style="align-items: start;">
+                <div style="grid-column: span 2;">
+                    <div class="card">
+                        <div style="display: flex; justify-content: between; align-items: center; margin-bottom: 1rem;">
+                            <h2>Video Consultation with Dr. Jane Smith</h2>
+                            <div style="margin-left: auto; display: flex; gap: 1rem;">
+                                <span style="background: #10b981; color: white; padding: 0.25rem 0.75rem; border-radius: 1rem; font-size: 0.875rem;">Connected</span>
+                                <span style="color: #6b7280;">15:32</span>
+                            </div>
+                        </div>
+                        
+                        <div class="video-container">
+                            <div style="text-align: center;">
+                                <div style="font-size: 3rem; margin-bottom: 1rem;">📹</div>
+                                <div>Dr. Jane Smith</div>
+                                <div style="font-size: 0.875rem; color: #9ca3af;">Video feed active</div>
+                            </div>
+                        </div>
+                        
+                        <div style="display: flex; justify-content: center; gap: 1rem; margin-top: 1rem;">
+                            <button class="btn btn-secondary">Mute Audio</button>
+                            <button class="btn btn-secondary">Turn Off Video</button>
+                            <button class="btn btn-secondary">Share Screen</button>
+                            <button class="btn" style="background: #dc2626;">End Call</button>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <h3 style="margin-bottom: 1rem;">Session Notes</h3>
+                        <textarea class="form-input" rows="4" placeholder="Meeting notes will be saved automatically...">
+Patient reports improvement in symptoms since last visit. 
+Current medication appears to be working well.
+Discussed lifestyle modifications and exercise routine.
+Follow-up appointment scheduled for 4 weeks.
+                        </textarea>
+                    </div>
+                </div>
+                
+                <div class="sidebar">
+                    <h3 style="margin-bottom: 1rem;">Session Info</h3>
+                    <div style="display: grid; gap: 0.75rem; margin-bottom: 1.5rem;">
+                        <div><strong>Patient:</strong> John Doe</div>
+                        <div><strong>Provider:</strong> Dr. Jane Smith</div>
+                        <div><strong>Session ID:</strong> TM-20230901-001</div>
+                        <div><strong>Start Time:</strong> 9:00 AM</div>
+                        <div><strong>Duration:</strong> 15:32</div>
+                    </div>
+                    
+                    <h3 style="margin-bottom: 1rem;">Quick Actions</h3>
+                    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                        <button class="btn btn-secondary" style="padding: 0.5rem; font-size: 0.875rem;">Send File</button>
+                        <button class="btn btn-secondary" style="padding: 0.5rem; font-size: 0.875rem;">View Records</button>
+                        <button class="btn btn-secondary" style="padding: 0.5rem; font-size: 0.875rem;">Schedule Follow-up</button>
+                        <button class="btn btn-secondary" style="padding: 0.5rem; font-size: 0.875rem;">Send Prescription</button>
+                    </div>
+                    
+                    <div class="alert alert-info" style="margin-top: 1rem; padding: 0.75rem; font-size: 0.875rem;">
+                        <strong>Session Recording:</strong> This session is being recorded for quality assurance with patient consent.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notifications Screen -->
+    <div id="notifications" class="screen">
+        <div class="header">
+            <div class="nav">
+                <div class="logo">FHIR Patient Portal</div>
+                <div class="nav-links">
+                    <a href="#" class="nav-link">Dashboard</a>
+                    <a href="#" class="nav-link">Messages</a>
+                    <a href="#" class="nav-link">Notifications</a>
+                    <a href="#" class="nav-link">Settings</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="container">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                <h1>Notifications</h1>
+                <div style="display: flex; gap: 1rem;">
+                    <button class="btn btn-secondary">Mark All Read</button>
+                    <button class="btn">Notification Settings</button>
+                </div>
+            </div>
+            
+            <div class="grid grid-2" style="align-items: start;">
+                <div class="card">
+                    <h2 style="margin-bottom: 1rem;">Recent Notifications</h2>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                        <div class="notification unread">
+                            <div>
+                                <div style="font-weight: 500;">Appointment Reminder</div>
+                                <div style="font-size: 0.875rem; color: #6b7280;">Your appointment with Dr. Jane Smith is tomorrow at 9:00 AM</div>
+                                <div style="font-size: 0.75rem; color: #9ca3af;">2 hours ago</div>
+                            </div>
+                            <button style="background: none; border: none; color: #6b7280; cursor: pointer;">×</button>
+                        </div>
+                        
+                        <div class="notification unread">
+                            <div>
+                                <div style="font-weight: 500;">Lab Results Available</div>
+                                <div style="font-size: 0.875rem; color: #6b7280;">Your blood work results from August 28 are now available</div>
+                                <div style="font-size: 0.75rem; color: #9ca3af;">1 day ago</div>
+                            </div>
+                            <button style="background: none; border: none; color: #6b7280; cursor: pointer;">×</button>
+                        </div>
+                        
+                        <div class="notification unread">
+                            <div>
+                                <div style="font-weight: 500;">Prescription Renewal</div>
+                                <div style="font-size: 0.875rem; color: #6b7280;">Your Lisinopril prescription is ready for pickup</div>
+                                <div style="font-size: 0.75rem; color: #9ca3af;">2 days ago</div>
+                            </div>
+                            <button style="background: none; border: none; color: #6b7280; cursor: pointer;">×</button>
+                        </div>
+                        
+                        <div class="notification">
+                            <div>
+                                <div style="font-weight: 500;">Message from Provider</div>
+                                <div style="font-size: 0.875rem; color: #6b7280;">Dr. Smith has sent you a message about your recent visit</div>
+                                <div style="font-size: 0.75rem; color: #9ca3af;">3 days ago</div>
+                            </div>
+                            <button style="background: none; border: none; color: #6b7280; cursor: pointer;">×</button>
+                        </div>
+                        
+                        <div class="notification">
+                            <div>
+                                <div style="font-weight: 500;">Annual Physical Due</div>
+                                <div style="font-size: 0.875rem; color: #6b7280;">It's time to schedule your annual physical examination</div>
+                                <div style="font-size: 0.75rem; color: #9ca3af;">1 week ago</div>
+                            </div>
+                            <button style="background: none; border: none; color: #6b7280; cursor: pointer;">×</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h2 style="margin-bottom: 1rem;">Notification Preferences</h2>
+                    
+                    <div style="display: grid; gap: 1rem;">
+                        <div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                <span style="font-weight: 500;">Appointment Reminders</span>
+                                <input type="checkbox" checked>
+                            </div>
+                            <div style="font-size: 0.875rem; color: #6b7280;">Get notified about upcoming appointments</div>
+                        </div>
+                        
+                        <div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                <span style="font-weight: 500;">Lab Results</span>
+                                <input type="checkbox" checked>
+                            </div>
+                            <div style="font-size: 0.875rem; color: #6b7280;">Receive notifications when lab results are available</div>
+                        </div>
+                        
+                        <div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                <span style="font-weight: 500;">Prescription Refills</span>
+                                <input type="checkbox" checked>
+                            </div>
+                            <div style="font-size: 0.875rem; color: #6b7280;">Get notified about prescription renewals</div>
+                        </div>
+                        
+                        <div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                <span style="font-weight: 500;">Provider Messages</span>
+                                <input type="checkbox" checked>
+                            </div>
+                            <div style="font-size: 0.875rem; color: #6b7280;">Receive messages from your healthcare providers</div>
+                        </div>
+                        
+                        <div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                <span style="font-weight: 500;">Health Alerts</span>
+                                <input type="checkbox" checked>
+                            </div>
+                            <div style="font-size: 0.875rem; color: #6b7280;">Critical health alerts and risk assessments</div>
+                        </div>
+                        
+                        <div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                <span style="font-weight: 500;">Preventive Care</span>
+                                <input type="checkbox">
+                            </div>
+                            <div style="font-size: 0.875rem; color: #6b7280;">Reminders for preventive care and screenings</div>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 1.5rem;">
+                        <h3 style="margin-bottom: 1rem;">Delivery Methods</h3>
+                        
+                        <div style="display: grid; gap: 0.75rem;">
+                            <label style="display: flex; align-items: center; gap: 0.5rem;">
+                                <input type="checkbox" checked> Email Notifications
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.5rem;">
+                                <input type="checkbox" checked> SMS Text Messages
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.5rem;">
+                                <input type="checkbox"> Push Notifications
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <button class="btn" style="width: 100%; margin-top: 1.5rem;">Save Preferences</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showScreen(screenId) {
+            // Hide all screens
+            const screens = document.querySelectorAll('.screen');
+            screens.forEach(screen => screen.classList.remove('active'));
+            
+            // Show selected screen
+            const targetScreen = document.getElementById(screenId);
+            if (targetScreen) {
+                targetScreen.classList.add('active');
+            }
+            
+            // Update selector
+            document.getElementById('screenSelector').value = screenId;
+        }
+        
+        // Initialize with login screen
+        document.addEventListener('DOMContentLoaded', function() {
+            showScreen('login');
+        });
+    </script>
+</body>
+</html>
