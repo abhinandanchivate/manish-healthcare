@@ -1,0 +1,1026 @@
+User Story 1: Ingest HL7 v2 message
+-----------------------------------
+1. Client/App → API Gateway/Router: POST /api/v1/hl7-parser/ingest — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → HL7 Parser: Forward authorized request — Attach user context/claims
+4. HL7 Parser → HL7 Parser: Validate request schema — MSH present; unique Control ID; sending/receiving apps registered; HL7 ver 2.3–2.8
+5. HL7 Parser → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. HL7 Parser → External API: Invoke integration (if any) — hl7.message.received; fhir.resource.created
+7. HL7 Parser → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. HL7 Parser → Audit/Log: Write audit trail — Trace/metrics/logs
+9. HL7 Parser → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"messageId":"MSG001","correlationId":"corr-uuid-123","status":"accepted"}
+
+User Story 2: Check parse status
+--------------------------------
+1. Client/App → API Gateway/Router: GET /api/v1/hl7-parser/parse-status/{messageId} — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → HL7 Parser: Forward authorized request — Attach user context/claims
+4. HL7 Parser → HL7 Parser: Validate request schema — MessageId exists
+5. HL7 Parser → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. HL7 Parser → External API: Invoke integration (if any) — —
+7. HL7 Parser → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. HL7 Parser → Audit/Log: Write audit trail — Trace/metrics/logs
+9. HL7 Parser → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"messageId":"MSG001","status":"processed","fhirResources":[{"resourceType":"Patient","id":"patient-123"}],"errors":[]}
+
+User Story 3: Batch ingest HL7
+------------------------------
+1. Client/App → API Gateway/Router: POST /api/v1/hl7-parser/batch — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → HL7 Parser: Forward authorized request — Attach user context/claims
+4. HL7 Parser → HL7 Parser: Validate request schema — Per-message validations; idempotency
+5. HL7 Parser → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. HL7 Parser → External API: Invoke integration (if any) — hl7.message.received; fhir.resource.created
+7. HL7 Parser → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. HL7 Parser → Audit/Log: Write audit trail — Trace/metrics/logs
+9. HL7 Parser → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"batchId":"batch-001","totalMessages":10,"processed":8,"failed":2,"status":"partial_success"}
+
+User Story 4: Validate registered applications
+----------------------------------------------
+1. Client/App → API Gateway/Router: GET /api/v1/hl7-parser/registered-apps — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → HL7 Parser: Forward authorized request — Attach user context/claims
+4. HL7 Parser → HL7 Parser: Validate request schema — Secured endpoint; roles=admin/integration
+5. HL7 Parser → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. HL7 Parser → External API: Invoke integration (if any) — —
+7. HL7 Parser → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. HL7 Parser → Audit/Log: Write audit trail — Trace/metrics/logs
+9. HL7 Parser → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"apps":["SENDING_APP","RECEIVING_APP"]}
+
+User Story 5: Reprocess failed HL7
+----------------------------------
+1. Client/App → API Gateway/Router: POST /api/v1/hl7-parser/reprocess/{messageId} — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → HL7 Parser: Forward authorized request — Attach user context/claims
+4. HL7 Parser → HL7 Parser: Validate request schema — Only failed messages; rate-limit
+5. HL7 Parser → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. HL7 Parser → External API: Invoke integration (if any) — hl7.message.received
+7. HL7 Parser → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. HL7 Parser → Audit/Log: Write audit trail — Trace/metrics/logs
+9. HL7 Parser → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"messageId":"MSG001","status":"requeued"}
+
+User Story 6: Register patient
+------------------------------
+1. Client/App → API Gateway/Router: POST /api/v1/patients — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Patient: Forward authorized request — Attach user context/claims
+4. Patient → Patient: Validate request schema — ≥1 identifier; name/gender/birthDate required; email/phone format; DOB not future; gender from ValueSet
+5. Patient → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Patient → External API: Invoke integration (if any) — patient.registered; audit.patient.created
+7. Patient → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Patient → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Patient → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"resourceType":"Patient","id":"patient-uuid-123","meta":{"versionId":"1"}}
+
+User Story 7: Update profile
+----------------------------
+1. Client/App → API Gateway/Router: PUT /api/v1/patients/{patientId} — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Patient: Forward authorized request — Attach user context/claims
+4. Patient → Patient: Validate request schema — Patient exists; permission; audit required
+5. Patient → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Patient → External API: Invoke integration (if any) — patient.updated
+7. Patient → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Patient → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Patient → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"resourceType":"Patient","id":"patient-uuid-123","meta":{"versionId":"2"}}
+
+User Story 8: Search patients
+-----------------------------
+1. Client/App → API Gateway/Router: GET /api/v1/patients/search?identifier=MRN12345&name=John&_fuzzy=true — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Patient: Forward authorized request — Attach user context/claims
+4. Patient → Patient: Validate request schema — Param formats; fuzzy allowed
+5. Patient → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Patient → External API: Invoke integration (if any) — patient.search
+7. Patient → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Patient → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Patient → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"resourceType":"Bundle","type":"searchset","total":1,"entry":[{"resource":{"resourceType":"Patient","id":"patient-uuid-...
+
+User Story 9: Merge duplicates
+------------------------------
+1. Client/App → API Gateway/Router: POST /api/v1/patients/{sourceId}/merge/{targetId} — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Patient: Forward authorized request — Attach user context/claims
+4. Patient → Patient: Validate request schema — Both IDs exist; role allows; full audit
+5. Patient → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Patient → External API: Invoke integration (if any) — patient.merged; audit.logged
+7. Patient → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Patient → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Patient → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"status":"merged","resultPatientId":"patient-uuid-123","mergedFields":["telecom","address"],"auditId":"audit-uuid-456"}
+
+User Story 10: Export record
+----------------------------
+1. Client/App → API Gateway/Router: GET /api/v1/patients/{patientId}/export?format=pdf&includeSections=demographics,vitals — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Patient: Forward authorized request — Attach user context/claims
+4. Patient → Patient: Validate request schema — Authorization; section names; signed URL TTL
+5. Patient → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Patient → External API: Invoke integration (if any) — audit.logged
+7. Patient → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Patient → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Patient → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"exportId":"export-uuid-789","status":"completed","downloadUrl":"/api/v1/exports/export-uuid-789/download","format":"pd...
+
+User Story 11: Set communication preferences
+--------------------------------------------
+1. Client/App → API Gateway/Router: PUT /api/v1/patients/{patientId}/communication — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Patient: Forward authorized request — Attach user context/claims
+4. Patient → Patient: Validate request schema — Valid channels; language code
+5. Patient → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Patient → External API: Invoke integration (if any) — patient.updated
+7. Patient → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Patient → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Patient → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"status":"updated"}
+
+User Story 12: Record consent change
+------------------------------------
+1. Client/App → API Gateway/Router: POST /api/v1/patients/{patientId}/consent — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Patient: Forward authorized request — Attach user context/claims
+4. Patient → Patient: Validate request schema — Consent types valid; timestamp
+5. Patient → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Patient → External API: Invoke integration (if any) — patient.consent.changed
+7. Patient → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Patient → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Patient → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"status":"recorded"}
+
+User Story 13: Deactivate (anonymize) patient
+---------------------------------------------
+1. Client/App → API Gateway/Router: POST /api/v1/patients/{patientId}/anonymize — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Patient: Forward authorized request — Attach user context/claims
+4. Patient → Patient: Validate request schema — DPO/Compliance approval
+5. Patient → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Patient → External API: Invoke integration (if any) — patient.anonymized
+7. Patient → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Patient → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Patient → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"status":"anonymized"}
+
+User Story 14: Link external identifiers
+----------------------------------------
+1. Client/App → API Gateway/Router: POST /api/v1/patients/{patientId}/identifiers — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Patient: Forward authorized request — Attach user context/claims
+4. Patient → Patient: Validate request schema — System URL; value uniqueness
+5. Patient → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Patient → External API: Invoke integration (if any) — patient.updated
+7. Patient → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Patient → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Patient → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"status":"linked"}
+
+User Story 15: Set primary contact
+----------------------------------
+1. Client/App → API Gateway/Router: PUT /api/v1/patients/{patientId}/contact/primary — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Patient: Forward authorized request — Attach user context/claims
+4. Patient → Patient: Validate request schema — Phone format; relationship ValueSet
+5. Patient → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Patient → External API: Invoke integration (if any) — patient.updated
+7. Patient → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Patient → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Patient → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"status":"updated"}
+
+User Story 16: Record address change
+------------------------------------
+1. Client/App → API Gateway/Router: PUT /api/v1/patients/{patientId}/address — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Patient: Forward authorized request — Attach user context/claims
+4. Patient → Patient: Validate request schema — Postal format; ISO country
+5. Patient → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Patient → External API: Invoke integration (if any) — patient.updated
+7. Patient → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Patient → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Patient → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"status":"updated"}
+
+User Story 17: Get patient by ID
+--------------------------------
+1. Client/App → API Gateway/Router: GET /api/v1/patients/{patientId} — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Patient: Forward authorized request — Attach user context/claims
+4. Patient → Patient: Validate request schema — AuthZ; masking by consent
+5. Patient → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Patient → External API: Invoke integration (if any) — audit.logged
+7. Patient → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Patient → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Patient → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"resourceType":"Patient","id":"patient-uuid-123"}
+
+User Story 18: List patient versions
+------------------------------------
+1. Client/App → API Gateway/Router: GET /api/v1/patients/{patientId}/_history — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Patient: Forward authorized request — Attach user context/claims
+4. Patient → Patient: Validate request schema — —
+5. Patient → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Patient → External API: Invoke integration (if any) — —
+7. Patient → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Patient → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Patient → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"entries":[{"versionId":"1"},{"versionId":"2"}]}
+
+User Story 19: Create vital sign
+--------------------------------
+1. Client/App → API Gateway/Router: POST /api/v1/observations — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Observation: Forward authorized request — Attach user context/claims
+4. Observation → Observation: Validate request schema — Valid LOINC; UCUM; patient exists; effective not future
+5. Observation → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Observation → External API: Invoke integration (if any) — observation.created
+7. Observation → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Observation → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Observation → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"resourceType":"Observation","id":"obs-uuid-123"}
+
+User Story 20: Batch lab results
+--------------------------------
+1. Client/App → API Gateway/Router: POST /api/v1/observations/lab-results — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Observation: Forward authorized request — Attach user context/claims
+4. Observation → Observation: Validate request schema — Transaction rules; LOINC mapping
+5. Observation → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Observation → External API: Invoke integration (if any) — observation.batch.processed
+7. Observation → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Observation → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Observation → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"status":"ok","created":1}
+
+User Story 21: Trends (glucose 30d)
+-----------------------------------
+1. Client/App → API Gateway/Router: GET /api/v1/observations/{patientId}/trends?code=2339-0&period=P30D — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Observation: Forward authorized request — Attach user context/claims
+4. Observation → Observation: Validate request schema — Valid code; period parse
+5. Observation → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Observation → External API: Invoke integration (if any) — trend.calculated
+7. Observation → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Observation → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Observation → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"patientId":"patient-uuid-123","dataPoints":[{"timestamp":"2023-08-01T08:00:00Z","value":95}],"referenceRanges":{"low":...
+
+User Story 22: Configure threshold alerts
+-----------------------------------------
+1. Client/App → API Gateway/Router: POST /api/v1/observations/alerts/configure — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Observation: Forward authorized request — Attach user context/claims
+4. Observation → Observation: Validate request schema — Code known; channels allowed; ranges sane
+5. Observation → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Observation → External API: Invoke integration (if any) — alert.triggered
+7. Observation → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Observation → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Observation → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"status":"configured"}
+
+User Story 23: Get observation by ID
+------------------------------------
+1. Client/App → API Gateway/Router: GET /api/v1/observations/{observationId} — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Observation: Forward authorized request — Attach user context/claims
+4. Observation → Observation: Validate request schema — AuthZ; consent masking
+5. Observation → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Observation → External API: Invoke integration (if any) — audit.logged
+7. Observation → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Observation → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Observation → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"resourceType":"Observation","id":"obs-uuid-123"}
+
+User Story 24: Update observation
+---------------------------------
+1. Client/App → API Gateway/Router: PUT /api/v1/observations/{observationId} — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Observation: Forward authorized request — Attach user context/claims
+4. Observation → Observation: Validate request schema — Amend rules; provenance/audit
+5. Observation → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Observation → External API: Invoke integration (if any) — observation.updated
+7. Observation → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Observation → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Observation → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"resourceType":"Observation","id":"obs-uuid-123","meta":{"versionId":"2"}}
+
+User Story 25: Delete observation
+---------------------------------
+1. Client/App → API Gateway/Router: DELETE /api/v1/observations/{observationId} — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Observation: Forward authorized request — Attach user context/claims
+4. Observation → Observation: Validate request schema — Soft-delete policy; audit
+5. Observation → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Observation → External API: Invoke integration (if any) — audit.logged
+7. Observation → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Observation → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Observation → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"status":"deleted"}
+
+User Story 26: List patient observations
+----------------------------------------
+1. Client/App → API Gateway/Router: GET /api/v1/observations?patient=patient-uuid-123&code=2339-0 — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Observation: Forward authorized request — Attach user context/claims
+4. Observation → Observation: Validate request schema — Search param validation
+5. Observation → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Observation → External API: Invoke integration (if any) — —
+7. Observation → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Observation → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Observation → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"resourceType":"Bundle","type":"searchset","total":2}
+
+User Story 27: Reference range library
+--------------------------------------
+1. Client/App → API Gateway/Router: GET /api/v1/observations/reference-ranges?code=2339-0 — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Observation: Forward authorized request — Attach user context/claims
+4. Observation → Observation: Validate request schema — Code valid; unit present
+5. Observation → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Observation → External API: Invoke integration (if any) — —
+7. Observation → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Observation → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Observation → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"low":70,"high":100,"unit":"mg/dL"}
+
+User Story 28: Bulk import CSV
+------------------------------
+1. Client/App → API Gateway/Router: POST /api/v1/observations/import — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Observation: Forward authorized request — Attach user context/claims
+4. Observation → Observation: Validate request schema — File schema; data types; patient map
+5. Observation → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Observation → External API: Invoke integration (if any) — observation.batch.processed
+7. Observation → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Observation → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Observation → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"importId":"imp-uuid-1","status":"processing"}
+
+User Story 29: Book appointment
+-------------------------------
+1. Client/App → API Gateway/Router: POST /api/v1/appointments — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Appointment: Forward authorized request — Attach user context/claims
+4. Appointment → Appointment: Validate request schema — Start future; end > start; provider available; no overlaps; business hours
+5. Appointment → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Appointment → External API: Invoke integration (if any) — appointment.booked
+7. Appointment → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Appointment → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Appointment → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"id":"appt-uuid-789","status":"booked","confirmationCode":"CONF123456"}
+
+User Story 30: Check availability
+---------------------------------
+1. Client/App → API Gateway/Router: GET /api/v1/appointments/availability?practitioner=doc-uuid-456&date=2023-09-15&duration=30 — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Appointment: Forward authorized request — Attach user context/claims
+4. Appointment → Appointment: Validate request schema — Practitioner exists; duration supported
+5. Appointment → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Appointment → External API: Invoke integration (if any) — —
+7. Appointment → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Appointment → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Appointment → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"date":"2023-09-15","availableSlots":[{"start":"2023-09-15T09:00:00Z","end":"2023-09-15T09:30:00Z"}]}
+
+User Story 31: Add to waitlist
+------------------------------
+1. Client/App → API Gateway/Router: POST /api/v1/appointments/{appointmentId}/waitlist — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Appointment: Forward authorized request — Attach user context/claims
+4. Appointment → Appointment: Validate request schema — Patient exists; prefs valid
+5. Appointment → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Appointment → External API: Invoke integration (if any) — waitlist.added
+7. Appointment → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Appointment → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Appointment → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"status":"added"}
+
+User Story 32: Cancel appointment
+---------------------------------
+1. Client/App → API Gateway/Router: POST /api/v1/appointments/{appointmentId}/cancel — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Appointment: Forward authorized request — Attach user context/claims
+4. Appointment → Appointment: Validate request schema — Policy window; fees; notify
+5. Appointment → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Appointment → External API: Invoke integration (if any) — appointment.cancelled
+7. Appointment → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Appointment → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Appointment → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"status":"cancelled"}
+
+User Story 33: Reschedule appointment
+-------------------------------------
+1. Client/App → API Gateway/Router: POST /api/v1/appointments/{appointmentId}/reschedule — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Appointment: Forward authorized request — Attach user context/claims
+4. Appointment → Appointment: Validate request schema — Conflicts; same validations as booking
+5. Appointment → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Appointment → External API: Invoke integration (if any) — appointment.updated
+7. Appointment → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Appointment → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Appointment → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"status":"rescheduled"}
+
+User Story 34: List patient appointments
+----------------------------------------
+1. Client/App → API Gateway/Router: GET /api/v1/appointments?patient=patient-uuid-123&date=2023-09 — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Appointment: Forward authorized request — Attach user context/claims
+4. Appointment → Appointment: Validate request schema — Date format; pagination
+5. Appointment → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Appointment → External API: Invoke integration (if any) — —
+7. Appointment → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Appointment → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Appointment → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"entries":[{"id":"appt-uuid-789","status":"booked"}]}
+
+User Story 35: Provider daily schedule
+--------------------------------------
+1. Client/App → API Gateway/Router: GET /api/v1/appointments/schedule?practitioner=doc-uuid-456&date=2023-09-15 — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Appointment: Forward authorized request — Attach user context/claims
+4. Appointment → Appointment: Validate request schema — Practitioner ID valid
+5. Appointment → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Appointment → External API: Invoke integration (if any) — —
+7. Appointment → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Appointment → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Appointment → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"practitioner":"doc-uuid-456","entries":[{"start":"2023-09-15T09:00:00Z","status":"booked"}]}
+
+User Story 36: Login user
+-------------------------
+1. Client/App → API Gateway/Router: POST /api/v1/auth/login — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Auth: Forward authorized request — Attach user context/claims
+4. Auth → Auth: Validate request schema — Email format; password rules; 5 attempts/15min; MFA for privileged; new device registration
+5. Auth → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Auth → External API: Invoke integration (if any) — user.authenticated; security.failed_login
+7. Auth → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Auth → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Auth → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"accessToken":"<jwt>","refreshToken":"refresh-uuid","expiresIn":3600,"user":{"id":"user-uuid-123","roles":["patient"]}}
+
+User Story 37: Register user
+----------------------------
+1. Client/App → API Gateway/Router: POST /api/v1/auth/register — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Auth: Forward authorized request — Attach user context/claims
+4. Auth → Auth: Validate request schema — Unique email; password rules; ToS accepted
+5. Auth → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Auth → External API: Invoke integration (if any) — user.registered
+7. Auth → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Auth → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Auth → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"status":"pending_verification"}
+
+User Story 38: Password reset (initiate)
+----------------------------------------
+1. Client/App → API Gateway/Router: POST /api/v1/auth/password-reset — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Auth: Forward authorized request — Attach user context/claims
+4. Auth → Auth: Validate request schema — Email exists; throttle
+5. Auth → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Auth → External API: Invoke integration (if any) — security.password_reset_requested
+7. Auth → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Auth → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Auth → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"status":"sent","resetTokenId":"reset-uuid-123","expiresIn":3600}
+
+User Story 39: Refresh token
+----------------------------
+1. Client/App → API Gateway/Router: POST /api/v1/auth/refresh — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Auth: Forward authorized request — Attach user context/claims
+4. Auth → Auth: Validate request schema — Refresh token valid/unrevoked
+5. Auth → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Auth → External API: Invoke integration (if any) — —
+7. Auth → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Auth → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Auth → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"accessToken":"<jwt>","expiresIn":3600}
+
+User Story 40: MFA setup
+------------------------
+1. Client/App → API Gateway/Router: POST /api/v1/auth/mfa/setup — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Auth: Forward authorized request — Attach user context/claims
+4. Auth → Auth: Validate request schema — User authenticated; method supported
+5. Auth → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Auth → External API: Invoke integration (if any) — —
+7. Auth → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Auth → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Auth → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"qrCode":"data:image/png;base64,...","secret":"JBSWY3...","backupCodes":["12345678"]}
+
+User Story 41: Device registration challenge
+--------------------------------------------
+1. Client/App → API Gateway/Router: POST /api/v1/auth/device/register — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Auth: Forward authorized request — Attach user context/claims
+4. Auth → Auth: Validate request schema — OTP valid; window not expired
+5. Auth → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Auth → External API: Invoke integration (if any) — —
+7. Auth → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Auth → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Auth → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"status":"verified"}
+
+User Story 42: Logout (revoke)
+------------------------------
+1. Client/App → API Gateway/Router: POST /api/v1/auth/logout — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Auth: Forward authorized request — Attach user context/claims
+4. Auth → Auth: Validate request schema — Token belongs to user
+5. Auth → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Auth → External API: Invoke integration (if any) — —
+7. Auth → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Auth → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Auth → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"status":"revoked"}
+
+User Story 43: Who am I
+-----------------------
+1. Client/App → API Gateway/Router: GET /api/v1/auth/me — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Auth: Forward authorized request — Attach user context/claims
+4. Auth → Auth: Validate request schema — Access token valid
+5. Auth → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Auth → External API: Invoke integration (if any) — —
+7. Auth → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Auth → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Auth → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"id":"user-uuid-123","email":"john.doe@example.com","roles":["patient"],"permissions":["read:own_records"]}
+
+User Story 44: Assign roles
+---------------------------
+1. Client/App → API Gateway/Router: POST /api/v1/roles/assign — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Roles: Forward authorized request — Attach user context/claims
+4. Roles → Roles: Validate request schema — Admin only; roles exist; dates valid
+5. Roles → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Roles → External API: Invoke integration (if any) — role.assigned
+7. Roles → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Roles → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Roles → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"assignmentId":"assignment-uuid-789","status":"active","permissions":["read:patient_records","write:observations"]}
+
+User Story 45: Validate permission
+----------------------------------
+1. Client/App → API Gateway/Router: POST /api/v1/roles/validate — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Roles: Forward authorized request — Attach user context/claims
+4. Roles → Roles: Validate request schema — Inputs valid; resource ref exists
+5. Roles → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Roles → External API: Invoke integration (if any) — access.granted/permission.denied
+7. Roles → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Roles → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Roles → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"allowed":true,"decision":"permit","conditions":["audit_required"]}
+
+User Story 46: ABAC evaluate
+----------------------------
+1. Client/App → API Gateway/Router: POST /api/v1/roles/abac/evaluate — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Roles: Forward authorized request — Attach user context/claims
+4. Roles → Roles: Validate request schema — Policy syntax; context present
+5. Roles → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Roles → External API: Invoke integration (if any) — access.granted/permission.denied
+7. Roles → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Roles → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Roles → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"allowed":true,"decision":"permit","conditions":["time_limited"]}
+
+User Story 47: List roles
+-------------------------
+1. Client/App → API Gateway/Router: GET /api/v1/roles — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Roles: Forward authorized request — Attach user context/claims
+4. Roles → Roles: Validate request schema — Admin scope
+5. Roles → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Roles → External API: Invoke integration (if any) — —
+7. Roles → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Roles → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Roles → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"roles":[{"name":"patient"},{"name":"doctor"}]}
+
+User Story 48: Create role
+--------------------------
+1. Client/App → API Gateway/Router: POST /api/v1/roles — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Roles: Forward authorized request — Attach user context/claims
+4. Roles → Roles: Validate request schema — Unique name; perms valid
+5. Roles → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Roles → External API: Invoke integration (if any) — —
+7. Roles → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Roles → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Roles → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"id":"role-uuid-1","status":"created"}
+
+User Story 49: Revoke role
+--------------------------
+1. Client/App → API Gateway/Router: DELETE /api/v1/roles/{userId}/{roleName} — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Roles: Forward authorized request — Attach user context/claims
+4. Roles → Roles: Validate request schema — Admin only; cannot remove last required role
+5. Roles → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Roles → External API: Invoke integration (if any) — —
+7. Roles → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Roles → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Roles → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"status":"revoked"}
+
+User Story 50: Create session
+-----------------------------
+1. Client/App → API Gateway/Router: POST /api/v1/telemedicine/sessions — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Telemedicine: Forward authorized request — Attach user context/claims
+4. Telemedicine → Telemedicine: Validate request schema — Appointment exists; participants permitted; window policy
+5. Telemedicine → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Telemedicine → External API: Invoke integration (if any) — session.started/session.ended
+7. Telemedicine → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Telemedicine → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Telemedicine → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"sessionId":"session-uuid-101","joinUrls":{"patient":"https://...","provider":"https://..."},"accessWindow":{"start":"2...
+
+User Story 51: Record consent
+-----------------------------
+1. Client/App → API Gateway/Router: POST /api/v1/telemedicine/consent — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Telemedicine: Forward authorized request — Attach user context/claims
+4. Telemedicine → Telemedicine: Validate request schema — Consent type valid; timestamp present
+5. Telemedicine → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Telemedicine → External API: Invoke integration (if any) — consent.recorded
+7. Telemedicine → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Telemedicine → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Telemedicine → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"status":"recorded"}
+
+User Story 52: Get session metrics
+----------------------------------
+1. Client/App → API Gateway/Router: GET /api/v1/telemedicine/sessions/{sessionId}/metrics — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Telemedicine: Forward authorized request — Attach user context/claims
+4. Telemedicine → Telemedicine: Validate request schema — Session exists; requester authorized
+5. Telemedicine → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Telemedicine → External API: Invoke integration (if any) — —
+7. Telemedicine → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Telemedicine → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Telemedicine → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"sessionId":"session-uuid-101","qualityMetrics":{"averageLatency":45,"packetLoss":0.2,"videoQuality":"HD","audioQuality...
+
+User Story 53: End session
+--------------------------
+1. Client/App → API Gateway/Router: POST /api/v1/telemedicine/sessions/{sessionId}/end — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Telemedicine: Forward authorized request — Attach user context/claims
+4. Telemedicine → Telemedicine: Validate request schema — Only host can end; within window
+5. Telemedicine → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Telemedicine → External API: Invoke integration (if any) — session.ended
+7. Telemedicine → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Telemedicine → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Telemedicine → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"status":"ended"}
+
+User Story 54: Chat toggle
+--------------------------
+1. Client/App → API Gateway/Router: PUT /api/v1/telemedicine/sessions/{sessionId}/settings — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Telemedicine: Forward authorized request — Attach user context/claims
+4. Telemedicine → Telemedicine: Validate request schema — Host privilege; policy for recording
+5. Telemedicine → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Telemedicine → External API: Invoke integration (if any) — —
+7. Telemedicine → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Telemedicine → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Telemedicine → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"status":"updated"}
+
+User Story 55: Generate new join link
+-------------------------------------
+1. Client/App → API Gateway/Router: POST /api/v1/telemedicine/sessions/{sessionId}/reissue-link — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Telemedicine: Forward authorized request — Attach user context/claims
+4. Telemedicine → Telemedicine: Validate request schema — Session active; rate-limit
+5. Telemedicine → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Telemedicine → External API: Invoke integration (if any) — —
+7. Telemedicine → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Telemedicine → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Telemedicine → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"joinUrl":"https://.../join/new-token"}
+
+User Story 56: Send notification
+--------------------------------
+1. Client/App → API Gateway/Router: POST /api/v1/notifications/send — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Notifications: Forward authorized request — Attach user context/claims
+4. Notifications → Notifications: Validate request schema — Template exists; variables supplied; schedule ≥ now
+5. Notifications → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Notifications → External API: Invoke integration (if any) — notification.sent/notification.delivered/notification.failed
+7. Notifications → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Notifications → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Notifications → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"notificationId":"notif-uuid-123","status":"scheduled"}
+
+User Story 57: Create template
+------------------------------
+1. Client/App → API Gateway/Router: POST /api/v1/notifications/templates — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Notifications: Forward authorized request — Attach user context/claims
+4. Notifications → Notifications: Validate request schema — Unique name; variables match body
+5. Notifications → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Notifications → External API: Invoke integration (if any) — —
+7. Notifications → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Notifications → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Notifications → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"templateId":"tmpl-uuid-123","status":"created"}
+
+User Story 58: Bulk campaign
+----------------------------
+1. Client/App → API Gateway/Router: POST /api/v1/notifications/bulk — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Notifications: Forward authorized request — Attach user context/claims
+4. Notifications → Notifications: Validate request schema — Rate-limits; recipient validity
+5. Notifications → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Notifications → External API: Invoke integration (if any) — notification.sent
+7. Notifications → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Notifications → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Notifications → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"campaignId":"camp-uuid-456","status":"scheduled"}
+
+User Story 59: Get delivery status
+----------------------------------
+1. Client/App → API Gateway/Router: GET /api/v1/notifications/{notificationId} — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Notifications: Forward authorized request — Attach user context/claims
+4. Notifications → Notifications: Validate request schema — ID valid
+5. Notifications → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Notifications → External API: Invoke integration (if any) — —
+7. Notifications → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Notifications → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Notifications → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"status":"delivered","channels":[{"type":"email","deliveredAt":"2023-09-14T20:00:35Z"}]}
+
+User Story 60: Unsubscribe
+--------------------------
+1. Client/App → API Gateway/Router: POST /api/v1/notifications/unsubscribe — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Notifications: Forward authorized request — Attach user context/claims
+4. Notifications → Notifications: Validate request schema — Channel valid; authN
+5. Notifications → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Notifications → External API: Invoke integration (if any) — —
+7. Notifications → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Notifications → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Notifications → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"status":"unsubscribed"}
+
+User Story 61: Preview template
+-------------------------------
+1. Client/App → API Gateway/Router: POST /api/v1/notifications/templates/preview — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Notifications: Forward authorized request — Attach user context/claims
+4. Notifications → Notifications: Validate request schema — Variables complete
+5. Notifications → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Notifications → External API: Invoke integration (if any) — —
+7. Notifications → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Notifications → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Notifications → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"emailPreview":"<html>...","smsPreview":"Reminder: Dr. Jane ..." }
+
+User Story 62: Risk score (diabetes)
+------------------------------------
+1. Client/App → API Gateway/Router: POST /api/v1/analytics/risk-score — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Analytics: Forward authorized request — Attach user context/claims
+4. Analytics → Analytics: Validate request schema — Required factors; unit normalization
+5. Analytics → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Analytics → External API: Invoke integration (if any) — risk.calculated
+7. Analytics → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Analytics → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Analytics → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"patientId":"patient-uuid-123","riskType":"diabetes","score":0.75,"level":"high","confidence":0.89,"recommendations":["...
+
+User Story 63: Train ML model
+-----------------------------
+1. Client/App → API Gateway/Router: POST /api/v1/analytics/ml/models/train — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Analytics: Forward authorized request — Attach user context/claims
+4. Analytics → Analytics: Validate request schema — ≥1000 records; privacy guardrails; CV
+5. Analytics → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Analytics → External API: Invoke integration (if any) — model.trained
+7. Analytics → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Analytics → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Analytics → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"trainingJobId":"job-uuid-123","status":"running","datasetInfo":{"totalRecords":15420}}
+
+User Story 64: Personalized alerts
+----------------------------------
+1. Client/App → API Gateway/Router: POST /api/v1/analytics/ml/alerts/personalized — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Analytics: Forward authorized request — Attach user context/claims
+4. Analytics → Analytics: Validate request schema — Model deployed; thresholds sane
+5. Analytics → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Analytics → External API: Invoke integration (if any) — alert.generated
+7. Analytics → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Analytics → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Analytics → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"alertId":"alert-uuid-789","patientId":"patient-uuid-123","riskAssessment":{"overallRisk":0.82,"riskLevel":"high"}}
+
+User Story 65: Model versioning
+-------------------------------
+1. Client/App → API Gateway/Router: POST /api/v1/analytics/ml/models/{modelId}/versions — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Analytics: Forward authorized request — Attach user context/claims
+4. Analytics → Analytics: Validate request schema — Metadata complete; canary limits
+5. Analytics → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Analytics → External API: Invoke integration (if any) — —
+7. Analytics → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Analytics → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Analytics → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"modelVersionId":"model-version-uuid-456","status":"deployed"}
+
+User Story 66: Healthcare trends
+--------------------------------
+1. Client/App → API Gateway/Router: GET /api/v1/analytics/trends?metric=readmission_rate&timeRange=P1Y&granularity=monthly — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Analytics: Forward authorized request — Attach user context/claims
+4. Analytics → Analytics: Validate request schema — Metric valid; timeRange parse
+5. Analytics → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Analytics → External API: Invoke integration (if any) — —
+7. Analytics → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Analytics → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Analytics → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"analysisId":"trend-analysis-uuid-789","trends":[{"metric":"readmission_rate","overall":{"currentValue":0.12,"trend":"d...
+
+User Story 67: Link predictions to FHIR
+---------------------------------------
+1. Client/App → API Gateway/Router: POST /api/v1/analytics/ml/predictions/link-fhir — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Analytics: Forward authorized request — Attach user context/claims
+4. Analytics → Analytics: Validate request schema — FHIR mapping rules; audit complete
+5. Analytics → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Analytics → External API: Invoke integration (if any) — —
+7. Analytics → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Analytics → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Analytics → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"linkingId":"fhir-link-uuid-101","fhirResources":[{"resourceType":"RiskAssessment","id":"risk-assess-uuid-202","status"...
+
+User Story 68: Model performance dashboard
+------------------------------------------
+1. Client/App → API Gateway/Router: GET /api/v1/analytics/ml/models/{modelId}/performance — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Analytics: Forward authorized request — Attach user context/claims
+4. Analytics → Analytics: Validate request schema — Model exists; role=ml-admin
+5. Analytics → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Analytics → External API: Invoke integration (if any) — —
+7. Analytics → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Analytics → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Analytics → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"accuracy":0.89,"precision":0.87,"recall":0.91,"auc":0.94}
+
+User Story 69: Bias/fairness report
+-----------------------------------
+1. Client/App → API Gateway/Router: GET /api/v1/analytics/ml/models/{modelId}/fairness — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Analytics: Forward authorized request — Attach user context/claims
+4. Analytics → Analytics: Validate request schema — Dataset segments defined
+5. Analytics → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Analytics → External API: Invoke integration (if any) — —
+7. Analytics → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Analytics → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Analytics → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"demographicParityDiff":0.03,"equalOpportunityDiff":0.05}
+
+User Story 70: Explain feature importance
+-----------------------------------------
+1. Client/App → API Gateway/Router: GET /api/v1/analytics/ml/models/{modelId}/features — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Analytics: Forward authorized request — Attach user context/claims
+4. Analytics → Analytics: Validate request schema — Model supports explanation
+5. Analytics → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Analytics → External API: Invoke integration (if any) — —
+7. Analytics → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Analytics → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Analytics → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"featureImportance":[{"name":"BMI","contribution":0.35},{"name":"Family History","contribution":0.25}]}
+
+User Story 71: Log access event
+-------------------------------
+1. Client/App → API Gateway/Router: POST /api/v1/audit/events — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Audit: Forward authorized request — Attach user context/claims
+4. Audit → Audit: Validate request schema — Required fields; immutability
+5. Audit → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Audit → External API: Invoke integration (if any) — audit.logged
+7. Audit → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Audit → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Audit → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"auditId":"audit-uuid-123","status":"logged","immutableHash":"sha256:abc123..."}
+
+User Story 72: Export logs
+--------------------------
+1. Client/App → API Gateway/Router: GET /api/v1/audit/export?startDate=2023-08-01&endDate=2023-09-01&format=csv — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Audit: Forward authorized request — Attach user context/claims
+4. Audit → Audit: Validate request schema — Date range valid; role=compliance
+5. Audit → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Audit → External API: Invoke integration (if any) — audit.export_requested
+7. Audit → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Audit → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Audit → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"exportId":"export-uuid-456","status":"processing","downloadUrl":"/api/v1/audit/exports/export-uuid-456"}
+
+User Story 73: Detect anomalies
+-------------------------------
+1. Client/App → API Gateway/Router: GET /api/v1/audit/anomalies?period=P7D — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Audit: Forward authorized request — Attach user context/claims
+4. Audit → Audit: Validate request schema — Period parse; thresholds
+5. Audit → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Audit → External API: Invoke integration (if any) — audit.anomaly_detected
+7. Audit → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Audit → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Audit → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"period":"P7D","anomalies":[{"type":"unusual_access_pattern","userId":"user-uuid-123","severity":"medium"}]}
+
+User Story 74: Verify audit signature
+-------------------------------------
+1. Client/App → API Gateway/Router: GET /api/v1/audit/verify/{auditId} — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Audit: Forward authorized request — Attach user context/claims
+4. Audit → Audit: Validate request schema — Signature exists
+5. Audit → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Audit → External API: Invoke integration (if any) — —
+7. Audit → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Audit → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Audit → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"auditId":"audit-uuid-123","valid":true}
+
+User Story 75: External FHIR Patient read
+-----------------------------------------
+1. Client/App → API Gateway/Router: GET /fhir/R4/Patient/{patientId} — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → FHIR Gateway: Forward authorized request — Attach user context/claims
+4. FHIR Gateway → FHIR Gateway: Validate request schema — API key valid; RBAC/ABAC; rate limits
+5. FHIR Gateway → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. FHIR Gateway → External API: Invoke integration (if any) — fhir.request; fhir.response
+7. FHIR Gateway → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. FHIR Gateway → Audit/Log: Write audit trail — Trace/metrics/logs
+9. FHIR Gateway → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"resourceType":"Patient","id":"patient-uuid-123"}
+
+User Story 76: CapabilityStatement
+----------------------------------
+1. Client/App → API Gateway/Router: GET /fhir/R4/metadata — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → FHIR Gateway: Forward authorized request — Attach user context/claims
+4. FHIR Gateway → FHIR Gateway: Validate request schema — —
+5. FHIR Gateway → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. FHIR Gateway → External API: Invoke integration (if any) — —
+7. FHIR Gateway → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. FHIR Gateway → Audit/Log: Write audit trail — Trace/metrics/logs
+9. FHIR Gateway → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"resourceType":"CapabilityStatement","fhirVersion":"4.0.1","format":["json","xml"]}
+
+User Story 77: Batch operations
+-------------------------------
+1. Client/App → API Gateway/Router: POST /fhir/R4/ — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → FHIR Gateway: Forward authorized request — Attach user context/claims
+4. FHIR Gateway → FHIR Gateway: Validate request schema — Batch size limits; per-entry validation
+5. FHIR Gateway → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. FHIR Gateway → External API: Invoke integration (if any) — fhir.request; fhir.response
+7. FHIR Gateway → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. FHIR Gateway → Audit/Log: Write audit trail — Trace/metrics/logs
+9. FHIR Gateway → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"resourceType":"Bundle","type":"batch-response","entry":[{"status":"200"},{"status":"200"}]}
+
+User Story 78: DLQ & retry policy
+---------------------------------
+1. Client/App → API Gateway/Router: GET /ops/kafka/dlq-policy — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Kafka/Ops: Forward authorized request — Attach user context/claims
+4. Kafka/Ops → Kafka/Ops: Validate request schema — Policies configured; alerting thresholds
+5. Kafka/Ops → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Kafka/Ops → External API: Invoke integration (if any) — dlq.failed-events.v1
+7. Kafka/Ops → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Kafka/Ops → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Kafka/Ops → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"retryPolicy":{"maxRetries":3,"backoff":{"type":"exponential","initialInterval":"PT1S","maxInterval":"PT30S"}}}
+
+User Story 79: Topic health monitoring
+--------------------------------------
+1. Client/App → API Gateway/Router: GET /ops/kafka/health — Send request with payload
+2. API Gateway/Router → Auth/RBAC: Authenticate & authorize — JWT/Token check; role/permissions
+3. Auth/RBAC → Kafka/Ops: Forward authorized request — Attach user context/claims
+4. Kafka/Ops → Kafka/Ops: Validate request schema — Metrics names valid
+5. Kafka/Ops → DB/Storage: CRUD / Query — Persist/retrieve; apply business rules
+6. Kafka/Ops → External API: Invoke integration (if any) — —
+7. Kafka/Ops → Notifier: Publish notifications (if any) — Email/SMS/Push
+8. Kafka/Ops → Audit/Log: Write audit trail — Trace/metrics/logs
+9. Kafka/Ops → API Gateway/Router: Build response DTO — Map to response schema
+10. API Gateway/Router → Client/App: Return response — {"alertRules":[{"metric":"consumer_lag","threshold":10000,"severity":"warning"},{"metric":"error_rate","threshold":0.05,...
